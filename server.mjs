@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'razalead-data') : path.join(__dirname, 'data');
 const LEADS = path.join(DATA_DIR, 'leads.json');
 const SESSIONS = path.join(DATA_DIR, 'sessions.json');
 const FOLLOWUPS = path.join(DATA_DIR, 'followups.json');
@@ -854,8 +854,7 @@ async function login(input) {
   return { ok: true, token: randomUUID(), user: publicUser };
 }
 
-http
-  .createServer(async (req, res) => {
+export async function appHandler(req, res) {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (req.method === 'OPTIONS') return send(res, 204, {});
@@ -932,7 +931,10 @@ http
     } catch (error) {
       return send(res, 500, { error: error.message });
     }
-  })
-  .listen(PORT, () => {
+}
+
+if (!process.env.VERCEL) {
+  http.createServer(appHandler).listen(PORT, () => {
     console.log(`RazaLead OS running at http://localhost:${PORT}`);
   });
+}
